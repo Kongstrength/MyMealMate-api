@@ -14,9 +14,14 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
+const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const users_service_1 = require("./users.service");
 const create_user_dto_1 = require("./dto/create-user.dto");
 const login_user_dto_1 = require("./dto/login-user.dto");
+const resend_verification_dto_1 = require("./dto/resend-verification.dto");
+const update_user_dto_1 = require("./dto/update-user.dto");
+const forgot_password_dto_1 = require("./dto/forgot-password.dto");
+const reset_password_dto_1 = require("./dto/reset-password.dto");
 let UsersController = class UsersController {
     usersService;
     constructor(usersService) {
@@ -28,11 +33,32 @@ let UsersController = class UsersController {
     async login(dto) {
         return this.usersService.login(dto);
     }
+    async forgotPassword(dto) {
+        return this.usersService.forgotPassword(dto.email);
+    }
+    async resetPassword(dto) {
+        return this.usersService.resetPassword(dto.token, dto.new_password);
+    }
+    async resendVerification(dto) {
+        return this.usersService.resendVerification(dto.email);
+    }
     async getAllUsers() {
         return this.usersService.findAll();
     }
-    async getUser(id) {
+    async verifyEmail(token) {
+        return this.usersService.verifyEmail(token);
+    }
+    async getUser(id, request) {
+        if (request.user.sub !== id) {
+            throw new common_1.UnauthorizedException('You can only access your own profile');
+        }
         return this.usersService.findById(id);
+    }
+    async updateUser(id, request, dto) {
+        if (request.user.sub !== id) {
+            throw new common_1.UnauthorizedException('You can only update your own profile');
+        }
+        return this.usersService.update(id, dto);
     }
 };
 exports.UsersController = UsersController;
@@ -51,18 +77,59 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "login", null);
 __decorate([
+    (0, common_1.Post)('forgot-password'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [forgot_password_dto_1.ForgotPasswordDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "forgotPassword", null);
+__decorate([
+    (0, common_1.Post)('reset-password'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [reset_password_dto_1.ResetPasswordDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "resetPassword", null);
+__decorate([
+    (0, common_1.Post)('resend-verification'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [resend_verification_dto_1.ResendVerificationDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "resendVerification", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getAllUsers", null);
 __decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Get)('verify-email'),
+    __param(0, (0, common_1.Query)('token')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
+], UsersController.prototype, "verifyEmail", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getUser", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, update_user_dto_1.UpdateUserDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateUser", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
     __metadata("design:paramtypes", [users_service_1.UsersService])

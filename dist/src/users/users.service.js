@@ -47,12 +47,20 @@ const common_1 = require("@nestjs/common");
 const bcrypt = __importStar(require("bcrypt"));
 const jwt = __importStar(require("jsonwebtoken"));
 const prisma_service_1 = require("../prisma/prisma.service");
+const mail_service_1 = require("../mail/mail.service");
+const crypto_1 = require("crypto");
+const client_1 = require("@prisma/client");
 let UsersService = class UsersService {
     prisma;
-    constructor(prisma) {
+    mailService;
+    constructor(prisma, mailService) {
         this.prisma = prisma;
+        this.mailService = mailService;
     }
     async register(dto) {
+        if (!dto.username || !dto.email || !dto.password) {
+            throw new common_1.BadRequestException('Username, email, and password are required');
+        }
         const exists = await this.prisma.user.findFirst({
             where: {
                 OR: [{ email: dto.email }, { username: dto.username }],
@@ -86,23 +94,63 @@ let UsersService = class UsersService {
                 health_goals_list: dto.health_goals_list ?? null,
             },
         });
-        const token = this.signToken(user.user_id, user.email);
-        const { password_hash: _, ...safeUser } = user;
+        const rawToken = (0, crypto_1.randomBytes)(32).toString('hex');
+        const tokenHash = this.hashToken(rawToken);
+        await this.prisma.emailVerificationToken.create({
+            data: {
+                token_hash: tokenHash,
+                user_id: user.user_id,
+                expires_at: new Date(Date.now() + 30 * 60 * 1000),
+            },
+        });
+        await this.mailService.sendVerificationEmail(user.email, rawToken);
         return {
-            user: safeUser,
-            accessToken: token,
+            message: 'Registration successful. Please check your email to verify your account.',
+        };
+    }
+    async verifyEmail(token) {
+        if (!token?.trim()) {
+            throw new common_1.BadRequestException('Verification token is required');
+        }
+        const tokenHash = this.hashToken(token.trim());
+        const verificationToken = await this.prisma.emailVerificationToken.findUnique({
+            where: { token_hash: tokenHash },
+        });
+        if (!verificationToken ||
+            verificationToken.used_at ||
+            verificationToken.expires_at < new Date()) {
+            throw new common_1.BadRequestException('Invalid or expired verification token');
+        }
+        await this.prisma.$transaction([
+            this.prisma.user.update({
+                where: { user_id: verificationToken.user_id },
+                data: { is_email_verified: true },
+            }),
+            this.prisma.emailVerificationToken.update({
+                where: { id: verificationToken.id },
+                data: { used_at: new Date() },
+            }),
+        ]);
+        return {
+            message: 'Email verified successfully',
         };
     }
     async login(dto) {
         const user = await this.prisma.user.findUnique({
             where: { email: dto.email },
         });
+        if (!dto.email || !dto.password) {
+            throw new common_1.BadRequestException('Email and password are required');
+        }
         if (!user || !user.password_hash) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
         const isPasswordValid = await bcrypt.compare(dto.password, user.password_hash);
         if (!isPasswordValid) {
             throw new common_1.UnauthorizedException('Invalid credentials');
+        }
+        if (!user.is_email_verified) {
+            throw new common_1.UnauthorizedException('Please verify your email first');
         }
         const token = this.signToken(user.user_id, user.email);
         const { password_hash: _, ...safeUser } = user;
@@ -112,21 +160,129 @@ let UsersService = class UsersService {
         };
     }
     async findById(id) {
-        return this.prisma.user.findUnique({
+        const user = await this.prisma.user.findUnique({
             where: { user_id: id },
         });
+        if (!user) {
+            return null;
+        }
+        const { password_hash: _, ...safeUser } = user;
+        return safeUser;
     }
     async findAll() {
         const users = await this.prisma.user.findMany();
         return users.map(({ password_hash, ...user }) => user);
     }
+    async resendVerification(email) {
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+        });
+        if (!user || user.is_email_verified) {
+            return {
+                message: 'If the email exists, a verification email will be sent.',
+            };
+        }
+        await this.prisma.emailVerificationToken.deleteMany({
+            where: { user_id: user.user_id },
+        });
+        const rawToken = (0, crypto_1.randomBytes)(32).toString('hex');
+        const tokenHash = this.hashToken(rawToken);
+        await this.prisma.emailVerificationToken.create({
+            data: {
+                token_hash: tokenHash,
+                user_id: user.user_id,
+                expires_at: new Date(Date.now() + 30 * 60 * 1000),
+            },
+        });
+        await this.mailService.sendVerificationEmail(user.email, rawToken);
+        return {
+            message: 'If the email exists, a verification email will be sent.',
+        };
+    }
     signToken(userId, email) {
         return jwt.sign({ sub: userId, email }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '7d' });
+    }
+    hashToken(token) {
+        return (0, crypto_1.createHash)('sha256').update(token).digest('hex');
+    }
+    async update(id, dto) {
+        const { liked_foods, preferred_food_types, health_goals_list, ...scalarData } = dto;
+        const data = {
+            ...scalarData,
+            ...(liked_foods !== undefined && {
+                liked_foods: liked_foods === null ? client_1.Prisma.DbNull : liked_foods,
+            }),
+            ...(preferred_food_types !== undefined && {
+                preferred_food_types: preferred_food_types === null
+                    ? client_1.Prisma.DbNull
+                    : preferred_food_types,
+            }),
+            ...(health_goals_list !== undefined && {
+                health_goals_list: health_goals_list === null
+                    ? client_1.Prisma.DbNull
+                    : health_goals_list,
+            }),
+        };
+        const user = await this.prisma.user.update({
+            where: { user_id: id },
+            data,
+        });
+        const { password_hash: _, ...safeUser } = user;
+        return safeUser;
+    }
+    async forgotPassword(email) {
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+        });
+        const genericResponse = {
+            message: 'If the email exists, a password reset email will be sent.',
+        };
+        if (!user) {
+            return genericResponse;
+        }
+        await this.prisma.forgetPasswordToken.deleteMany({
+            where: { user_id: user.user_id },
+        });
+        const rawToken = (0, crypto_1.randomBytes)(32).toString('hex');
+        const tokenHash = this.hashToken(rawToken);
+        await this.prisma.forgetPasswordToken.create({
+            data: {
+                token_hash: tokenHash,
+                user_id: user.user_id,
+                expires_at: new Date(Date.now() + 30 * 60 * 1000),
+            },
+        });
+        await this.mailService.sendPasswordResetEmail(user.email, rawToken);
+        return genericResponse;
+    }
+    async resetPassword(token, newPassword) {
+        const tokenHash = this.hashToken(token);
+        const resetToken = await this.prisma.forgetPasswordToken.findUnique({
+            where: { token_hash: tokenHash },
+        });
+        if (!resetToken ||
+            resetToken.used_at ||
+            resetToken.expires_at < new Date()) {
+            throw new common_1.BadRequestException('Invalid or expired password reset token');
+        }
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+        await this.prisma.$transaction([
+            this.prisma.user.update({
+                where: { user_id: resetToken.user_id },
+                data: { password_hash: passwordHash },
+            }),
+            this.prisma.forgetPasswordToken.update({
+                where: { id: resetToken.id },
+                data: { used_at: new Date() },
+            }),
+        ]);
+        return { message: 'Password reset successfully' };
     }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        mail_service_1.MailService])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

@@ -1,38 +1,16 @@
+import type { AuthenticatedRequest } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
     register(dto: CreateUserDto): Promise<{
-        user: {
-            user_id: string;
-            username: string;
-            email: string;
-            full_name: string;
-            phone: string | null;
-            age: number | null;
-            gender: string | null;
-            height: number | null;
-            weight: number | null;
-            bmi: import("@prisma/client-runtime-utils").Decimal;
-            birthday: Date | null;
-            is_active: boolean;
-            created_at: Date;
-            updated_at: Date;
-            budget_daily: import("@prisma/client-runtime-utils").Decimal;
-            budget_weekly: import("@prisma/client-runtime-utils").Decimal;
-            budget_monthly: import("@prisma/client-runtime-utils").Decimal;
-            calories_per_day: number;
-            daily_target_calories: number;
-            activity_level: import("@prisma/client").$Enums.users_activity_level;
-            liked_foods: import("@prisma/client/runtime/client").JsonValue | null;
-            preferred_food_types: import("@prisma/client/runtime/client").JsonValue | null;
-            health_goals_list: import("@prisma/client/runtime/client").JsonValue | null;
-            google_id: string | null;
-            is_email_verified: boolean;
-        };
-        accessToken: string;
+        message: string;
     }>;
     login(dto: LoginUserDto): Promise<{
         user: {
@@ -64,6 +42,15 @@ export declare class UsersController {
         };
         accessToken: string;
     }>;
+    forgotPassword(dto: ForgotPasswordDto): Promise<{
+        message: string;
+    }>;
+    resetPassword(dto: ResetPasswordDto): Promise<{
+        message: string;
+    }>;
+    resendVerification(dto: ResendVerificationDto): Promise<{
+        message: string;
+    }>;
     getAllUsers(): Promise<{
         user_id: string;
         username: string;
@@ -91,11 +78,13 @@ export declare class UsersController {
         google_id: string | null;
         is_email_verified: boolean;
     }[]>;
-    getUser(id: string): Promise<{
+    verifyEmail(token: string): Promise<{
+        message: string;
+    }>;
+    getUser(id: string, request: AuthenticatedRequest): Promise<{
         user_id: string;
         username: string;
         email: string;
-        password_hash: string | null;
         full_name: string;
         phone: string | null;
         age: number | null;
@@ -119,4 +108,31 @@ export declare class UsersController {
         google_id: string | null;
         is_email_verified: boolean;
     } | null>;
+    updateUser(id: string, request: AuthenticatedRequest, dto: UpdateUserDto): Promise<{
+        user_id: string;
+        username: string;
+        email: string;
+        full_name: string;
+        phone: string | null;
+        age: number | null;
+        gender: string | null;
+        height: number | null;
+        weight: number | null;
+        bmi: import("@prisma/client-runtime-utils").Decimal;
+        birthday: Date | null;
+        is_active: boolean;
+        created_at: Date;
+        updated_at: Date;
+        budget_daily: import("@prisma/client-runtime-utils").Decimal;
+        budget_weekly: import("@prisma/client-runtime-utils").Decimal;
+        budget_monthly: import("@prisma/client-runtime-utils").Decimal;
+        calories_per_day: number;
+        daily_target_calories: number;
+        activity_level: import("@prisma/client").$Enums.users_activity_level;
+        liked_foods: import("@prisma/client/runtime/client").JsonValue | null;
+        preferred_food_types: import("@prisma/client/runtime/client").JsonValue | null;
+        health_goals_list: import("@prisma/client/runtime/client").JsonValue | null;
+        google_id: string | null;
+        is_email_verified: boolean;
+    }>;
 }

@@ -3,9 +3,9 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
-
+import { MailModule } from '../mail/mail.module';
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, MailModule],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],
