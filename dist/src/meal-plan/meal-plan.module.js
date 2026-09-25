@@ -19,6 +19,7 @@ exports.MealPlanModule = MealPlanModule = __decorate([
         imports: [prisma_module_1.PrismaModule],
         controllers: [meal_plan_controller_1.MealPlanController],
         providers: [meal_plan_service_1.MealPlanService],
+        exports: [meal_plan_service_1.MealPlanService],
     })
 ], MealPlanModule);
 //# sourceMappingURL=meal-plan.module.js.map

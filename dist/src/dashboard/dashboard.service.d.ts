@@ -1,7 +1,9 @@
 import { PrismaService } from '../prisma/prisma.service';
+import { MealPlanService } from '../meal-plan/meal-plan.service';
 export declare class DashboardService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly mealPlanService;
+    constructor(prisma: PrismaService, mealPlanService: MealPlanService);
     getDashboard(userId: string, requestedDate?: string): Promise<{
         date: string;
         user: {
@@ -55,6 +57,5 @@ export declare class DashboardService {
             }[];
         } | null;
     }>;
-    private parseDate;
     private formatDate;
 }

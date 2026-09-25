@@ -7,6 +7,7 @@ import {
 import OpenAI from 'openai';
 import { PrismaService } from '../prisma/prisma.service';
 import { MarketPricesService } from '../market-prices/market-prices.service';
+import { formatBangkokDateKey, parseDateOnly } from '../date.utils';
 
 /**
  * MOC Category IDs (กระทรวงพาณิชย์)
@@ -129,7 +130,7 @@ export class AiService {
   }
 
   private async fetchAllMocPrices(): Promise<CategoryPrices[]> {
-    const today = this.formatDate(new Date());
+    const today = formatBangkokDateKey();
 
     const results = await Promise.allSettled(
       MOC_CATEGORIES.map(async (cat) => {
@@ -517,12 +518,12 @@ ${priceSection}
   ) {
     this.validateMealsForSave(meals);
 
-    const dateValue = requestedDate ?? this.formatDate(new Date());
+    const dateValue = requestedDate ?? formatBangkokDateKey();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
       throw new BadRequestException('Date must use YYYY-MM-DD format');
     }
-    const planDate = new Date(`${dateValue}T00:00:00.000+07:00`);
-    if (Number.isNaN(planDate.getTime())) {
+    const planDate = parseDateOnly(dateValue);
+    if (!planDate) {
       throw new BadRequestException('Invalid date');
     }
 
@@ -631,14 +632,5 @@ ${priceSection}
       SNACK: '🍪',
     };
     return map[mealType] ?? '🍽';
-  }
-
-  private formatDate(date: Date) {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Bangkok',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(date);
   }
 }

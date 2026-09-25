@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MealPlanService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const date_utils_1 = require("../date.utils");
 let MealPlanService = class MealPlanService {
     prisma;
     constructor(prisma) {
@@ -48,7 +49,7 @@ let MealPlanService = class MealPlanService {
             to,
             plans: plans.map((plan) => ({
                 id: plan.meal_plan_id,
-                date: this.formatDate(plan.plan_date),
+                date: (0, date_utils_1.formatDateOnly)(plan.plan_date),
                 totalCalories: plan.total_calories,
                 totalCost: Number(plan.total_cost),
                 items: plan.meal_plan_items.map((item) => ({
@@ -163,23 +164,15 @@ let MealPlanService = class MealPlanService {
         }
     }
     parseDate(value) {
-        const dateValue = value ?? this.formatDate(new Date());
+        const dateValue = value ?? (0, date_utils_1.formatBangkokDateKey)();
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
             throw new common_1.BadRequestException('Date must use YYYY-MM-DD format');
         }
-        const date = new Date(`${dateValue}T00:00:00.000+07:00`);
-        if (Number.isNaN(date.getTime())) {
+        const date = (0, date_utils_1.parseDateOnly)(dateValue);
+        if (!date) {
             throw new common_1.BadRequestException('Invalid date');
         }
         return date;
-    }
-    formatDate(date) {
-        return new Intl.DateTimeFormat('en-CA', {
-            timeZone: 'Asia/Bangkok',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-        }).format(date);
     }
 };
 exports.MealPlanService = MealPlanService;

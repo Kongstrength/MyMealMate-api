@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { MealPlanService } from './meal-plan.service';
 
 describe('MealPlanService', () => {
-  const mealPlan = { findMany: jest.fn() };
+  const mealPlan = { findMany: jest.fn(), findUnique: jest.fn() };
   const service = new MealPlanService({ mealPlan } as never);
 
   beforeEach(() => {
@@ -62,5 +62,26 @@ describe('MealPlanService', () => {
       service.findByRange('user-1', '2026-01-01', '2026-05-01'),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(mealPlan.findMany).not.toHaveBeenCalled();
+  });
+
+  it('queries the exact requested calendar date without moving to the previous day', async () => {
+    mealPlan.findUnique.mockResolvedValue(null);
+
+    await service.findByDate('user-1', '2026-09-25');
+
+    expect(mealPlan.findUnique).toHaveBeenCalledWith({
+      where: {
+        user_id_plan_date: {
+          user_id: 'user-1',
+          plan_date: new Date('2026-09-25T00:00:00.000Z'),
+        },
+      },
+      include: {
+        meal_plan_items: {
+          orderBy: { sort_order: 'asc' },
+          include: { recipe: true },
+        },
+      },
+    });
   });
 });

@@ -7,5 +7,6 @@ import { MealPlanService } from './meal-plan.service';
   imports: [PrismaModule],
   controllers: [MealPlanController],
   providers: [MealPlanService],
+  exports: [MealPlanService],
 })
 export class MealPlanModule {}

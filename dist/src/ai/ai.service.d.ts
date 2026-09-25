@@ -72,10 +72,10 @@ export declare class AiService {
             updated_at: Date;
             recipe_id: string;
             meal_type: string;
+            servings: import("@prisma/client-runtime-utils").Decimal;
             meal_plan_id: string;
             sort_order: number;
             meal_plan_item_id: string;
-            servings: import("@prisma/client-runtime-utils").Decimal;
             calories_snapshot: number;
             cost_snapshot: import("@prisma/client-runtime-utils").Decimal;
         })[];
@@ -90,6 +90,5 @@ export declare class AiService {
     }>;
     private validateMealsForSave;
     private mealTypeEmoji;
-    private formatDate;
 }
 export {};

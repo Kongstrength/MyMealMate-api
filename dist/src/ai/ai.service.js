@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const openai_1 = __importDefault(require("openai"));
 const prisma_service_1 = require("../prisma/prisma.service");
 const market_prices_service_1 = require("../market-prices/market-prices.service");
+const date_utils_1 = require("../date.utils");
 const MOC_CATEGORIES = [
     { id: 1, name: 'เนื้อสัตว์ (Meat)' },
     { id: 2, name: 'สัตว์น้ำ (Seafood)' },
@@ -69,7 +70,7 @@ let AiService = class AiService {
         return this.requestRecommendation(prompt, dailyBudget, mealsCount, foodAllergies, dislikedFoods);
     }
     async fetchAllMocPrices() {
-        const today = this.formatDate(new Date());
+        const today = (0, date_utils_1.formatBangkokDateKey)();
         const results = await Promise.allSettled(MOC_CATEGORIES.map(async (cat) => {
             const data = await this.marketPricesService.findMocPrices(today, cat.id, 'R', 0, 50);
             return {
@@ -333,12 +334,12 @@ ${priceSection}
     }
     async saveMealPlan(userId, meals, requestedDate) {
         this.validateMealsForSave(meals);
-        const dateValue = requestedDate ?? this.formatDate(new Date());
+        const dateValue = requestedDate ?? (0, date_utils_1.formatBangkokDateKey)();
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
             throw new common_1.BadRequestException('Date must use YYYY-MM-DD format');
         }
-        const planDate = new Date(`${dateValue}T00:00:00.000+07:00`);
-        if (Number.isNaN(planDate.getTime())) {
+        const planDate = (0, date_utils_1.parseDateOnly)(dateValue);
+        if (!planDate) {
             throw new common_1.BadRequestException('Invalid date');
         }
         return this.prisma.$transaction(async (tx) => {
@@ -428,14 +429,6 @@ ${priceSection}
             SNACK: '🍪',
         };
         return map[mealType] ?? '🍽';
-    }
-    formatDate(date) {
-        return new Intl.DateTimeFormat('en-CA', {
-            timeZone: 'Asia/Bangkok',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-        }).format(date);
     }
 };
 exports.AiService = AiService;

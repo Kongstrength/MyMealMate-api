@@ -12,62 +12,51 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const meal_plan_service_1 = require("../meal-plan/meal-plan.service");
 const profile_completeness_1 = require("../users/profile-completeness");
 let DashboardService = class DashboardService {
     prisma;
-    constructor(prisma) {
+    mealPlanService;
+    constructor(prisma, mealPlanService) {
         this.prisma = prisma;
+        this.mealPlanService = mealPlanService;
     }
     async getDashboard(userId, requestedDate) {
-        const planDate = this.parseDate(requestedDate);
-        const user = await this.prisma.user.findUnique({
-            where: { user_id: userId },
-            select: {
-                user_id: true,
-                username: true,
-                email: true,
-                full_name: true,
-                phone: true,
-                age: true,
-                gender: true,
-                height: true,
-                weight: true,
-                bmi: true,
-                birthday: true,
-                activity_level: true,
-                budget_daily: true,
-                budget_weekly: true,
-                budget_monthly: true,
-                calories_per_day: true,
-                daily_target_calories: true,
-                liked_foods: true,
-                disliked_foods: true,
-                food_allergies: true,
-                preferred_food_types: true,
-                health_goals_list: true,
-            },
-        });
+        const [user, mealPlan] = await Promise.all([
+            this.prisma.user.findUnique({
+                where: { user_id: userId },
+                select: {
+                    user_id: true,
+                    username: true,
+                    email: true,
+                    full_name: true,
+                    phone: true,
+                    age: true,
+                    gender: true,
+                    height: true,
+                    weight: true,
+                    bmi: true,
+                    birthday: true,
+                    activity_level: true,
+                    budget_daily: true,
+                    budget_weekly: true,
+                    budget_monthly: true,
+                    calories_per_day: true,
+                    daily_target_calories: true,
+                    liked_foods: true,
+                    disliked_foods: true,
+                    food_allergies: true,
+                    preferred_food_types: true,
+                    health_goals_list: true,
+                },
+            }),
+            this.mealPlanService.findByDate(userId, requestedDate),
+        ]);
         if (!user) {
             throw new common_1.BadRequestException('User not found');
         }
-        const mealPlan = await this.prisma.mealPlan.findUnique({
-            where: {
-                user_id_plan_date: {
-                    user_id: userId,
-                    plan_date: planDate,
-                },
-            },
-            include: {
-                meal_plan_items: {
-                    orderBy: { sort_order: 'asc' },
-                    include: {
-                        recipe: true,
-                    },
-                },
-            },
-        });
         return {
-            date: requestedDate ?? this.formatDate(planDate),
+            date: requestedDate ?? this.formatDate(new Date()),
             user: (0, profile_completeness_1.withProfileCompleteness)({
                 ...user,
                 bmi: Number(user.bmi),
@@ -103,17 +92,6 @@ let DashboardService = class DashboardService {
                 : null,
         };
     }
-    parseDate(value) {
-        const dateValue = value ?? this.formatDate(new Date());
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
-            throw new common_1.BadRequestException('Date must use YYYY-MM-DD format');
-        }
-        const date = new Date(`${dateValue}T00:00:00.000+07:00`);
-        if (Number.isNaN(date.getTime())) {
-            throw new common_1.BadRequestException('Invalid date');
-        }
-        return date;
-    }
     formatDate(date) {
         return new Intl.DateTimeFormat('en-CA', {
             timeZone: 'Asia/Bangkok',
@@ -126,6 +104,7 @@ let DashboardService = class DashboardService {
 exports.DashboardService = DashboardService;
 exports.DashboardService = DashboardService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        meal_plan_service_1.MealPlanService])
 ], DashboardService);
 //# sourceMappingURL=dashboard.service.js.map

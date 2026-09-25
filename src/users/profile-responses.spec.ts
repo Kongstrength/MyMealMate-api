@@ -48,12 +48,14 @@ describe('profile completeness in user responses', () => {
     mealPlan: { findUnique: jest.fn() },
   };
   const mailService = {};
+  const mealPlanService = { findByDate: jest.fn() };
 
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.user.findUnique.mockResolvedValue(completeUser);
     prisma.user.update.mockResolvedValue(completeUser);
     prisma.mealPlan.findUnique.mockResolvedValue(null);
+    mealPlanService.findByDate.mockResolvedValue(null);
     jest.mocked(bcrypt.compare).mockResolvedValue(true as never);
   });
 
@@ -62,7 +64,10 @@ describe('profile completeness in user responses', () => {
       prisma as never,
       mailService as never,
     );
-    const dashboardService = new DashboardService(prisma as never);
+    const dashboardService = new DashboardService(
+      prisma as never,
+      mealPlanService as never,
+    );
 
     const login = await usersService.login({
       email: completeUser.email,
@@ -104,5 +109,54 @@ describe('profile completeness in user responses', () => {
     });
 
     expect(result.is_profile_complete).toBe(true);
+  });
+
+  it('uses the shared meal-plan service for the dashboard menu', async () => {
+    mealPlanService.findByDate.mockResolvedValueOnce({
+      meal_plan_id: 'plan-id',
+      total_calories: 1650,
+      total_cost: 210,
+      meal_plan_items: [
+        {
+          meal_plan_item_id: 'item-id',
+          meal_type: 'BREAKFAST',
+          servings: 1,
+          calories_snapshot: 250,
+          cost_snapshot: 35,
+          recipe: {
+            recipe_id: 'recipe-id',
+            name: 'โยเกิร์ตผลไม้',
+            description: null,
+            meal_type: 'BREAKFAST',
+            calories: 250,
+            protein_g: 12,
+            carbs_g: 40,
+            fat_g: 5,
+            estimated_cost: 35,
+            emoji: '🥣',
+          },
+        },
+      ],
+    });
+    const dashboardService = new DashboardService(
+      prisma as never,
+      mealPlanService as never,
+    );
+
+    const dashboard = await dashboardService.getDashboard(
+      completeUser.user_id,
+      '2026-09-25',
+    );
+
+    expect(mealPlanService.findByDate).toHaveBeenCalledWith(
+      completeUser.user_id,
+      '2026-09-25',
+    );
+    expect(dashboard.mealPlan?.items[0]).toMatchObject({
+      mealType: 'BREAKFAST',
+      calories: 250,
+      cost: 35,
+      recipe: { name: 'โยเกิร์ตผลไม้' },
+    });
   });
 });

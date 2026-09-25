@@ -5,6 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  formatBangkokDateKey,
+  formatDateOnly,
+  parseDateOnly,
+} from '../date.utils';
 import { MealPlanItemDto, UpsertMealPlanDto } from './dto/upsert-meal-plan.dto';
 
 @Injectable()
@@ -48,7 +53,7 @@ export class MealPlanService {
       to,
       plans: plans.map((plan) => ({
         id: plan.meal_plan_id,
-        date: this.formatDate(plan.plan_date),
+        date: formatDateOnly(plan.plan_date),
         totalCalories: plan.total_calories,
         totalCost: Number(plan.total_cost),
         items: plan.meal_plan_items.map((item) => ({
@@ -191,24 +196,15 @@ export class MealPlanService {
   }
 
   private parseDate(value?: string) {
-    const dateValue = value ?? this.formatDate(new Date());
+    const dateValue = value ?? formatBangkokDateKey();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
       throw new BadRequestException('Date must use YYYY-MM-DD format');
     }
 
-    const date = new Date(`${dateValue}T00:00:00.000+07:00`);
-    if (Number.isNaN(date.getTime())) {
+    const date = parseDateOnly(dateValue);
+    if (!date) {
       throw new BadRequestException('Invalid date');
     }
     return date;
-  }
-
-  private formatDate(date: Date) {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Bangkok',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(date);
   }
 }
