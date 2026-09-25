@@ -41,10 +41,14 @@ export declare class UsersService {
             health_goals_list: Prisma.JsonValue | null;
             google_id: string | null;
             is_email_verified: boolean;
+            disliked_foods: Prisma.JsonValue | null;
+            food_allergies: Prisma.JsonValue | null;
+        } & {
+            is_profile_complete: boolean;
         };
         accessToken: string;
     }>;
-    findById(id: string): Promise<{
+    findById(id: string): Promise<({
         user_id: string;
         username: string;
         email: string;
@@ -70,8 +74,12 @@ export declare class UsersService {
         health_goals_list: Prisma.JsonValue | null;
         google_id: string | null;
         is_email_verified: boolean;
-    } | null>;
-    findAll(): Promise<{
+        disliked_foods: Prisma.JsonValue | null;
+        food_allergies: Prisma.JsonValue | null;
+    } & {
+        is_profile_complete: boolean;
+    }) | null>;
+    findAll(): Promise<({
         user_id: string;
         username: string;
         email: string;
@@ -97,7 +105,11 @@ export declare class UsersService {
         health_goals_list: Prisma.JsonValue | null;
         google_id: string | null;
         is_email_verified: boolean;
-    }[]>;
+        disliked_foods: Prisma.JsonValue | null;
+        food_allergies: Prisma.JsonValue | null;
+    } & {
+        is_profile_complete: boolean;
+    })[]>;
     resendVerification(email: string): Promise<{
         message: string;
     }>;
@@ -129,6 +141,10 @@ export declare class UsersService {
         health_goals_list: Prisma.JsonValue | null;
         google_id: string | null;
         is_email_verified: boolean;
+        disliked_foods: Prisma.JsonValue | null;
+        food_allergies: Prisma.JsonValue | null;
+    } & {
+        is_profile_complete: boolean;
     }>;
     forgotPassword(email: string): Promise<{
         message: string;

@@ -20,6 +20,8 @@ class CreateUserDto {
     calories_per_day;
     daily_target_calories;
     liked_foods;
+    disliked_foods;
+    food_allergies;
     preferred_food_types;
     health_goals_list;
 }
@@ -40,6 +42,8 @@ class UpdateUserDto {
     calories_per_day;
     daily_target_calories;
     liked_foods;
+    disliked_foods;
+    food_allergies;
     preferred_food_types;
     health_goals_list;
 }

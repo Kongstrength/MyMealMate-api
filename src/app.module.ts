@@ -5,9 +5,18 @@ import { UsersModule } from './users/users.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { RecipesModule } from './recipes/recipes.module';
 import { MealPlanModule } from './meal-plan/meal-plan.module';
+import { MarketPricesModule } from './market-prices/market-prices.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
-  imports: [UsersModule, DashboardModule, RecipesModule, MealPlanModule],
+  imports: [
+    UsersModule,
+    DashboardModule,
+    RecipesModule,
+    MealPlanModule,
+    MarketPricesModule,
+    AiModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

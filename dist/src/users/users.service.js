@@ -50,6 +50,7 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const mail_service_1 = require("../mail/mail.service");
 const crypto_1 = require("crypto");
 const client_1 = require("@prisma/client");
+const profile_completeness_1 = require("./profile-completeness");
 let UsersService = class UsersService {
     prisma;
     mailService;
@@ -60,6 +61,20 @@ let UsersService = class UsersService {
     async register(dto) {
         if (!dto.username || !dto.email || !dto.password) {
             throw new common_1.BadRequestException('Username, email, and password are required');
+        }
+        const birthday = new Date(dto.birthday);
+        const today = new Date();
+        if (birthday > today) {
+            throw new common_1.BadRequestException('วันเกิดต้องไม่เป็นวันที่ในอนาคต');
+        }
+        let age = today.getUTCFullYear() - birthday.getUTCFullYear();
+        const birthdayPassedThisYear = today.getUTCMonth() > birthday.getUTCMonth() ||
+            (today.getUTCMonth() === birthday.getUTCMonth() &&
+                today.getUTCDate() >= birthday.getUTCDate());
+        if (!birthdayPassedThisYear)
+            age -= 1;
+        if (age > 120) {
+            throw new common_1.BadRequestException('วันเกิดต้องมีอายุไม่เกิน 120 ปี');
         }
         const exists = await this.prisma.user.findFirst({
             where: {
@@ -77,21 +92,23 @@ let UsersService = class UsersService {
                 password_hash,
                 full_name: dto.full_name ?? dto.username,
                 phone: dto.phone ?? null,
-                age: dto.age ?? null,
+                age: dto.age ?? age,
                 gender: dto.gender ?? null,
                 height: dto.height ?? null,
                 weight: dto.weight ?? null,
                 bmi: dto.bmi ?? 0,
-                birthday: dto.birthday ?? null,
+                birthday,
                 activity_level: dto.activity_level ?? 'SEDENTARY',
                 budget_daily: dto.budget_daily ?? 0,
                 budget_weekly: dto.budget_weekly ?? 0,
                 budget_monthly: dto.budget_monthly ?? 0,
                 calories_per_day: dto.calories_per_day ?? 0,
                 daily_target_calories: dto.daily_target_calories ?? 0,
-                liked_foods: dto.liked_foods ?? null,
-                preferred_food_types: dto.preferred_food_types ?? null,
-                health_goals_list: dto.health_goals_list ?? null,
+                liked_foods: dto.liked_foods ?? client_1.Prisma.DbNull,
+                disliked_foods: dto.disliked_foods ?? client_1.Prisma.DbNull,
+                food_allergies: dto.food_allergies ?? client_1.Prisma.DbNull,
+                preferred_food_types: dto.preferred_food_types ?? client_1.Prisma.DbNull,
+                health_goals_list: dto.health_goals_list ?? client_1.Prisma.DbNull,
             },
         });
         const rawToken = (0, crypto_1.randomBytes)(32).toString('hex');
@@ -153,9 +170,10 @@ let UsersService = class UsersService {
             throw new common_1.UnauthorizedException('Please verify your email first');
         }
         const token = this.signToken(user.user_id, user.email);
-        const { password_hash: _, ...safeUser } = user;
+        const { password_hash, ...safeUser } = user;
+        void password_hash;
         return {
-            user: safeUser,
+            user: (0, profile_completeness_1.withProfileCompleteness)(safeUser),
             accessToken: token,
         };
     }
@@ -166,12 +184,16 @@ let UsersService = class UsersService {
         if (!user) {
             return null;
         }
-        const { password_hash: _, ...safeUser } = user;
-        return safeUser;
+        const { password_hash, ...safeUser } = user;
+        void password_hash;
+        return (0, profile_completeness_1.withProfileCompleteness)(safeUser);
     }
     async findAll() {
         const users = await this.prisma.user.findMany();
-        return users.map(({ password_hash, ...user }) => user);
+        return users.map(({ password_hash, ...user }) => {
+            void password_hash;
+            return (0, profile_completeness_1.withProfileCompleteness)(user);
+        });
     }
     async resendVerification(email) {
         const user = await this.prisma.user.findUnique({
@@ -206,29 +228,32 @@ let UsersService = class UsersService {
         return (0, crypto_1.createHash)('sha256').update(token).digest('hex');
     }
     async update(id, dto) {
-        const { liked_foods, preferred_food_types, health_goals_list, ...scalarData } = dto;
+        const { liked_foods, disliked_foods, food_allergies, preferred_food_types, health_goals_list, ...scalarData } = dto;
         const data = {
             ...scalarData,
             ...(liked_foods !== undefined && {
                 liked_foods: liked_foods === null ? client_1.Prisma.DbNull : liked_foods,
             }),
+            ...(disliked_foods !== undefined && {
+                disliked_foods: disliked_foods === null ? client_1.Prisma.DbNull : disliked_foods,
+            }),
+            ...(food_allergies !== undefined && {
+                food_allergies: food_allergies === null ? client_1.Prisma.DbNull : food_allergies,
+            }),
             ...(preferred_food_types !== undefined && {
-                preferred_food_types: preferred_food_types === null
-                    ? client_1.Prisma.DbNull
-                    : preferred_food_types,
+                preferred_food_types: preferred_food_types === null ? client_1.Prisma.DbNull : preferred_food_types,
             }),
             ...(health_goals_list !== undefined && {
-                health_goals_list: health_goals_list === null
-                    ? client_1.Prisma.DbNull
-                    : health_goals_list,
+                health_goals_list: health_goals_list === null ? client_1.Prisma.DbNull : health_goals_list,
             }),
         };
         const user = await this.prisma.user.update({
             where: { user_id: id },
             data,
         });
-        const { password_hash: _, ...safeUser } = user;
-        return safeUser;
+        const { password_hash, ...safeUser } = user;
+        void password_hash;
+        return (0, profile_completeness_1.withProfileCompleteness)(safeUser);
     }
     async forgotPassword(email) {
         const user = await this.prisma.user.findUnique({

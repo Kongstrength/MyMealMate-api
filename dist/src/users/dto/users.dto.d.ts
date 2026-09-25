@@ -16,9 +16,11 @@ export declare class CreateUserDto {
     budget_monthly?: number;
     calories_per_day?: number;
     daily_target_calories?: number;
-    liked_foods?: any;
-    preferred_food_types?: any;
-    health_goals_list?: any;
+    liked_foods?: string[];
+    disliked_foods?: string[];
+    food_allergies?: string[];
+    preferred_food_types?: string[];
+    health_goals_list?: string[];
 }
 export declare class UpdateUserDto {
     full_name: string;
@@ -35,7 +37,9 @@ export declare class UpdateUserDto {
     budget_monthly?: number;
     calories_per_day?: number;
     daily_target_calories?: number;
-    liked_foods?: any;
-    preferred_food_types?: any;
-    health_goals_list?: any;
+    liked_foods?: string[] | null;
+    disliked_foods?: string[] | null;
+    food_allergies?: string[] | null;
+    preferred_food_types?: string[] | null;
+    health_goals_list?: string[] | null;
 }

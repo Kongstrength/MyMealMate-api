@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { withProfileCompleteness } from '../users/profile-completeness';
 
 @Injectable()
 export class DashboardService {
@@ -12,12 +13,24 @@ export class DashboardService {
       select: {
         user_id: true,
         username: true,
+        email: true,
         full_name: true,
+        phone: true,
+        age: true,
+        gender: true,
+        height: true,
+        weight: true,
+        bmi: true,
+        birthday: true,
+        activity_level: true,
         budget_daily: true,
         budget_weekly: true,
         budget_monthly: true,
+        calories_per_day: true,
         daily_target_calories: true,
         liked_foods: true,
+        disliked_foods: true,
+        food_allergies: true,
         preferred_food_types: true,
         health_goals_list: true,
       },
@@ -46,12 +59,13 @@ export class DashboardService {
 
     return {
       date: requestedDate ?? this.formatDate(planDate),
-      user: {
+      user: withProfileCompleteness({
         ...user,
+        bmi: Number(user.bmi),
         budget_daily: Number(user.budget_daily),
         budget_weekly: Number(user.budget_weekly),
         budget_monthly: Number(user.budget_monthly),
-      },
+      }),
       mealPlan: mealPlan
         ? {
             id: mealPlan.meal_plan_id,

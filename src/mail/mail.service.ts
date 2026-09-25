@@ -63,7 +63,9 @@ export class MailService {
     });
 
     if (error) {
-      this.logger.error(`Resend password reset error: ${JSON.stringify(error)}`);
+      this.logger.error(
+        `Resend password reset error: ${JSON.stringify(error)}`,
+      );
       throw new InternalServerErrorException('ส่งอีเมลไม่สำเร็จ');
     }
   }

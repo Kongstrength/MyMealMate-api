@@ -31,6 +31,8 @@ model user {
   daily_target_calories Int                  @default(0)
   activity_level        users_activity_level
   liked_foods           Json?
+  disliked_foods        Json?
+  food_allergies        Json?
   preferred_food_types  Json?
   health_goals_list     Json?
   google_id             String?              @unique
@@ -92,6 +94,7 @@ model recipe {
 
   meal_plan_items mealPlanItem[]
 
+  @@unique([name, meal_type], name: "name_meal_type")
   @@index([meal_type])
   @@index([is_active])
 }

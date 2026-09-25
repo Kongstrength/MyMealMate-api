@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateUserDto = void 0;
 const class_validator_1 = require("class-validator");
+const password_policy_1 = require("./password-policy");
 class CreateUserDto {
     username;
     email;
@@ -30,6 +31,8 @@ class CreateUserDto {
     calories_per_day;
     daily_target_calories;
     liked_foods;
+    disliked_foods;
+    food_allergies;
     preferred_food_types;
     health_goals_list;
 }
@@ -47,7 +50,50 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.MinLength)(8),
+    (0, class_validator_1.MinLength)(8, { message: password_policy_1.PASSWORD_REQUIREMENTS_MESSAGE }),
+    (0, class_validator_1.MaxLength)(64, { message: password_policy_1.PASSWORD_REQUIREMENTS_MESSAGE }),
+    (0, class_validator_1.Matches)(password_policy_1.PASSWORD_PATTERN, { message: password_policy_1.PASSWORD_REQUIREMENTS_MESSAGE }),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "password", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], CreateUserDto.prototype, "full_name", void 0);
+__decorate([
+    (0, class_validator_1.IsDateString)({}, { message: 'กรุณากรอกวันเกิดให้ถูกต้อง' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'กรุณากรอกวันเกิด' }),
+    __metadata("design:type", String)
+], CreateUserDto.prototype, "birthday", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], CreateUserDto.prototype, "liked_foods", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], CreateUserDto.prototype, "disliked_foods", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], CreateUserDto.prototype, "food_allergies", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], CreateUserDto.prototype, "preferred_food_types", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], CreateUserDto.prototype, "health_goals_list", void 0);
 //# sourceMappingURL=create-user.dto.js.map

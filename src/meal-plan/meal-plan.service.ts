@@ -11,6 +11,69 @@ import { MealPlanItemDto, UpsertMealPlanDto } from './dto/upsert-meal-plan.dto';
 export class MealPlanService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findByRange(userId: string, from?: string, to?: string) {
+    if (!from || !to) {
+      throw new BadRequestException('From and to dates are required');
+    }
+
+    const fromDate = this.parseDate(from);
+    const toDate = this.parseDate(to);
+    const rangeInDays = Math.round(
+      (toDate.getTime() - fromDate.getTime()) / 86_400_000,
+    );
+
+    if (rangeInDays < 0) {
+      throw new BadRequestException('To date must not be before from date');
+    }
+    if (rangeInDays > 92) {
+      throw new BadRequestException('Date range must not exceed 93 days');
+    }
+
+    const plans = await this.prisma.mealPlan.findMany({
+      where: {
+        user_id: userId,
+        plan_date: { gte: fromDate, lte: toDate },
+      },
+      orderBy: { plan_date: 'asc' },
+      include: {
+        meal_plan_items: {
+          orderBy: { sort_order: 'asc' },
+          include: { recipe: true },
+        },
+      },
+    });
+
+    return {
+      from,
+      to,
+      plans: plans.map((plan) => ({
+        id: plan.meal_plan_id,
+        date: this.formatDate(plan.plan_date),
+        totalCalories: plan.total_calories,
+        totalCost: Number(plan.total_cost),
+        items: plan.meal_plan_items.map((item) => ({
+          id: item.meal_plan_item_id,
+          mealType: item.meal_type,
+          servings: Number(item.servings),
+          calories: item.calories_snapshot,
+          cost: Number(item.cost_snapshot),
+          recipe: {
+            id: item.recipe.recipe_id,
+            name: item.recipe.name,
+            description: item.recipe.description,
+            mealType: item.recipe.meal_type,
+            calories: item.recipe.calories,
+            protein: Number(item.recipe.protein_g),
+            carbs: Number(item.recipe.carbs_g),
+            fat: Number(item.recipe.fat_g),
+            estimatedCost: Number(item.recipe.estimated_cost),
+            emoji: item.recipe.emoji,
+          },
+        })),
+      })),
+    };
+  }
+
   async findByDate(userId: string, requestedDate?: string) {
     const planDate = this.parseDate(requestedDate);
     return this.prisma.mealPlan.findUnique({
@@ -24,7 +87,11 @@ export class MealPlanService {
     });
   }
 
-  async upsert(userId: string, requestedDate: string | undefined, dto: UpsertMealPlanDto) {
+  async upsert(
+    userId: string,
+    requestedDate: string | undefined,
+    dto: UpsertMealPlanDto,
+  ) {
     const planDate = this.parseDate(requestedDate);
     this.validateUniqueMealTypes(dto.items);
 
@@ -35,7 +102,9 @@ export class MealPlanService {
           is_active: true,
         },
       });
-      const recipesById = new Map(recipes.map((recipe) => [recipe.recipe_id, recipe]));
+      const recipesById = new Map(
+        recipes.map((recipe) => [recipe.recipe_id, recipe]),
+      );
 
       for (const item of dto.items) {
         const recipe = recipesById.get(item.recipe_id);
@@ -43,7 +112,9 @@ export class MealPlanService {
           throw new BadRequestException('Recipe not found or inactive');
         }
         if (recipe.meal_type !== item.meal_type) {
-          throw new BadRequestException('Recipe meal type does not match the plan item');
+          throw new BadRequestException(
+            'Recipe meal type does not match the plan item',
+          );
         }
       }
 
@@ -53,7 +124,9 @@ export class MealPlanService {
         update: {},
       });
 
-      await transaction.mealPlanItem.deleteMany({ where: { meal_plan_id: mealPlan.meal_plan_id } });
+      await transaction.mealPlanItem.deleteMany({
+        where: { meal_plan_id: mealPlan.meal_plan_id },
+      });
 
       const items = dto.items.map((item, index) => {
         const recipe = recipesById.get(item.recipe_id)!;
@@ -73,8 +146,14 @@ export class MealPlanService {
         await transaction.mealPlanItem.createMany({ data: items });
       }
 
-      const totalCalories = items.reduce((sum, item) => sum + item.calories_snapshot, 0);
-      const totalCost = items.reduce((sum, item) => sum + item.cost_snapshot, 0);
+      const totalCalories = items.reduce(
+        (sum, item) => sum + item.calories_snapshot,
+        0,
+      );
+      const totalCost = items.reduce(
+        (sum, item) => sum + item.cost_snapshot,
+        0,
+      );
 
       return transaction.mealPlan.update({
         where: { meal_plan_id: mealPlan.meal_plan_id },
@@ -90,7 +169,9 @@ export class MealPlanService {
   }
 
   async delete(userId: string, planId: string) {
-    const plan = await this.prisma.mealPlan.findUnique({ where: { meal_plan_id: planId } });
+    const plan = await this.prisma.mealPlan.findUnique({
+      where: { meal_plan_id: planId },
+    });
     if (!plan) {
       throw new NotFoundException('Meal plan not found');
     }

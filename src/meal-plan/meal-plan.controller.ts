@@ -19,6 +19,15 @@ import { MealPlanService } from './meal-plan.service';
 export class MealPlanController {
   constructor(private readonly mealPlanService: MealPlanService) {}
 
+  @Get('range')
+  findByRange(
+    @Req() request: AuthenticatedRequest,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.mealPlanService.findByRange(request.user.sub, from, to);
+  }
+
   @Get()
   findByDate(
     @Req() request: AuthenticatedRequest,
@@ -37,10 +46,7 @@ export class MealPlanController {
   }
 
   @Delete(':id')
-  delete(
-    @Req() request: AuthenticatedRequest,
-    @Param('id') id: string,
-  ) {
+  delete(@Req() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.mealPlanService.delete(request.user.sub, id);
   }
 }

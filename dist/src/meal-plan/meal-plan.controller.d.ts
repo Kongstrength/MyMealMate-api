@@ -4,6 +4,35 @@ import { MealPlanService } from './meal-plan.service';
 export declare class MealPlanController {
     private readonly mealPlanService;
     constructor(mealPlanService: MealPlanService);
+    findByRange(request: AuthenticatedRequest, from?: string, to?: string): Promise<{
+        from: string;
+        to: string;
+        plans: {
+            id: string;
+            date: string;
+            totalCalories: number;
+            totalCost: number;
+            items: {
+                id: string;
+                mealType: string;
+                servings: number;
+                calories: number;
+                cost: number;
+                recipe: {
+                    id: string;
+                    name: string;
+                    description: string | null;
+                    mealType: string;
+                    calories: number;
+                    protein: number;
+                    carbs: number;
+                    fat: number;
+                    estimatedCost: number;
+                    emoji: string | null;
+                };
+            }[];
+        }[];
+    }>;
     findByDate(request: AuthenticatedRequest, date?: string): Promise<({
         meal_plan_items: ({
             recipe: {

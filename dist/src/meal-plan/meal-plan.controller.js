@@ -22,6 +22,9 @@ let MealPlanController = class MealPlanController {
     constructor(mealPlanService) {
         this.mealPlanService = mealPlanService;
     }
+    findByRange(request, from, to) {
+        return this.mealPlanService.findByRange(request.user.sub, from, to);
+    }
     findByDate(request, date) {
         return this.mealPlanService.findByDate(request.user.sub, date);
     }
@@ -33,6 +36,15 @@ let MealPlanController = class MealPlanController {
     }
 };
 exports.MealPlanController = MealPlanController;
+__decorate([
+    (0, common_1.Get)('range'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('from')),
+    __param(2, (0, common_1.Query)('to')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", void 0)
+], MealPlanController.prototype, "findByRange", null);
 __decorate([
     (0, common_1.Get)(),
     __param(0, (0, common_1.Req)()),

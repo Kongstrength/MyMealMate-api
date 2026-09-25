@@ -12,7 +12,7 @@ export class AppController {
 
   @Get('health')
   getHealth() {
-    return{
+    return {
       ok: true,
       message: 'Server is running',
       timestamp: new Date().toISOString(),

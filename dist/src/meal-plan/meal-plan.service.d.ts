@@ -3,6 +3,35 @@ import { UpsertMealPlanDto } from './dto/upsert-meal-plan.dto';
 export declare class MealPlanService {
     private readonly prisma;
     constructor(prisma: PrismaService);
+    findByRange(userId: string, from?: string, to?: string): Promise<{
+        from: string;
+        to: string;
+        plans: {
+            id: string;
+            date: string;
+            totalCalories: number;
+            totalCost: number;
+            items: {
+                id: string;
+                mealType: string;
+                servings: number;
+                calories: number;
+                cost: number;
+                recipe: {
+                    id: string;
+                    name: string;
+                    description: string | null;
+                    mealType: string;
+                    calories: number;
+                    protein: number;
+                    carbs: number;
+                    fat: number;
+                    estimatedCost: number;
+                    emoji: string | null;
+                };
+            }[];
+        }[];
+    }>;
     findByDate(userId: string, requestedDate?: string): Promise<({
         meal_plan_items: ({
             recipe: {

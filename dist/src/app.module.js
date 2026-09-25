@@ -14,12 +14,21 @@ const users_module_1 = require("./users/users.module");
 const dashboard_module_1 = require("./dashboard/dashboard.module");
 const recipes_module_1 = require("./recipes/recipes.module");
 const meal_plan_module_1 = require("./meal-plan/meal-plan.module");
+const market_prices_module_1 = require("./market-prices/market-prices.module");
+const ai_module_1 = require("./ai/ai.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [users_module_1.UsersModule, dashboard_module_1.DashboardModule, recipes_module_1.RecipesModule, meal_plan_module_1.MealPlanModule],
+        imports: [
+            users_module_1.UsersModule,
+            dashboard_module_1.DashboardModule,
+            recipes_module_1.RecipesModule,
+            meal_plan_module_1.MealPlanModule,
+            market_prices_module_1.MarketPricesModule,
+            ai_module_1.AiModule,
+        ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     })

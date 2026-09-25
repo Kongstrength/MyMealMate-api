@@ -39,6 +39,10 @@ export declare class UsersController {
             health_goals_list: import("@prisma/client/runtime/client").JsonValue | null;
             google_id: string | null;
             is_email_verified: boolean;
+            disliked_foods: import("@prisma/client/runtime/client").JsonValue | null;
+            food_allergies: import("@prisma/client/runtime/client").JsonValue | null;
+        } & {
+            is_profile_complete: boolean;
         };
         accessToken: string;
     }>;
@@ -51,7 +55,7 @@ export declare class UsersController {
     resendVerification(dto: ResendVerificationDto): Promise<{
         message: string;
     }>;
-    getAllUsers(): Promise<{
+    getAllUsers(): Promise<({
         user_id: string;
         username: string;
         email: string;
@@ -77,11 +81,15 @@ export declare class UsersController {
         health_goals_list: import("@prisma/client/runtime/client").JsonValue | null;
         google_id: string | null;
         is_email_verified: boolean;
-    }[]>;
+        disliked_foods: import("@prisma/client/runtime/client").JsonValue | null;
+        food_allergies: import("@prisma/client/runtime/client").JsonValue | null;
+    } & {
+        is_profile_complete: boolean;
+    })[]>;
     verifyEmail(token: string): Promise<{
         message: string;
     }>;
-    getUser(id: string, request: AuthenticatedRequest): Promise<{
+    getUser(id: string, request: AuthenticatedRequest): Promise<({
         user_id: string;
         username: string;
         email: string;
@@ -107,7 +115,11 @@ export declare class UsersController {
         health_goals_list: import("@prisma/client/runtime/client").JsonValue | null;
         google_id: string | null;
         is_email_verified: boolean;
-    } | null>;
+        disliked_foods: import("@prisma/client/runtime/client").JsonValue | null;
+        food_allergies: import("@prisma/client/runtime/client").JsonValue | null;
+    } & {
+        is_profile_complete: boolean;
+    }) | null>;
     updateUser(id: string, request: AuthenticatedRequest, dto: UpdateUserDto): Promise<{
         user_id: string;
         username: string;
@@ -134,5 +146,9 @@ export declare class UsersController {
         health_goals_list: import("@prisma/client/runtime/client").JsonValue | null;
         google_id: string | null;
         is_email_verified: boolean;
+        disliked_foods: import("@prisma/client/runtime/client").JsonValue | null;
+        food_allergies: import("@prisma/client/runtime/client").JsonValue | null;
+    } & {
+        is_profile_complete: boolean;
     }>;
 }

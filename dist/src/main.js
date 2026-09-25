@@ -15,5 +15,5 @@ async function bootstrap() {
     app.setGlobalPrefix('api');
     await app.listen(process.env.PORT ?? 5000);
 }
-bootstrap();
+void bootstrap();
 //# sourceMappingURL=main.js.map
