@@ -13,5 +13,13 @@ export declare class RecipesController {
         fat: number;
         estimatedCost: number;
         emoji: string | null;
+        source: import("@prisma/client").$Enums.recipe_source;
+        cookingTips: string | null;
+        ingredients: {
+            name: string;
+            amount: string | null;
+            estimatedPrice: number | null;
+        }[];
+        steps: string[];
     }[]>;
 }

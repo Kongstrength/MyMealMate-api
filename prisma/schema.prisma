@@ -88,15 +88,51 @@ model recipe {
   fat_g          Decimal  @db.Decimal(10, 2)
   estimated_cost Decimal  @db.Decimal(10, 2)
   emoji          String?
+  source         recipe_source @default(CURATED)
+  cooking_tips   String?
   is_active      Boolean  @default(true)
   created_at     DateTime @default(now()) @db.Timestamptz(6)
   updated_at     DateTime @updatedAt @db.Timestamptz(6)
 
   meal_plan_items mealPlanItem[]
+  ingredients     recipeIngredient[]
+  steps           recipeStep[]
 
   @@unique([name, meal_type], name: "name_meal_type")
   @@index([meal_type])
   @@index([is_active])
+}
+
+enum recipe_source {
+  CURATED
+  AI
+}
+
+model recipeIngredient {
+  recipe_ingredient_id String   @id @default(uuid()) @db.Uuid
+  recipe_id            String   @db.Uuid
+  name                 String
+  amount               String?
+  estimated_price      Decimal? @db.Decimal(10, 2)
+  sort_order           Int      @default(0)
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+
+  recipe recipe @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade)
+
+  @@index([recipe_id, sort_order])
+  @@index([name])
+}
+
+model recipeStep {
+  recipe_step_id String   @id @default(uuid()) @db.Uuid
+  recipe_id      String   @db.Uuid
+  instruction    String
+  sort_order     Int      @default(0)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  recipe recipe @relation(fields: [recipe_id], references: [recipe_id], onDelete: Cascade)
+
+  @@index([recipe_id, sort_order])
 }
 
 model mealPlan {

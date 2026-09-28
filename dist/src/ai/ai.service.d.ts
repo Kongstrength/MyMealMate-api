@@ -5,11 +5,12 @@ type AiMeal = {
     meal_type: (typeof MEAL_TYPES)[number];
     menu_name: string;
     description?: string;
-    ingredients?: Array<{
+    ingredients: Array<{
         name: string;
         amount: string;
         estimated_price: number;
     }>;
+    steps: string[];
     estimated_cost: number;
     calories: number;
     protein_g?: number;
@@ -42,21 +43,12 @@ export declare class AiService {
     private isBillingOrQuotaError;
     private isRetryableError;
     private toOpenAiException;
-    saveMealPlan(userId: string, meals: Array<{
-        meal_type: string;
-        menu_name: string;
-        estimated_cost: number;
-        calories: number;
-        protein_g?: number;
-        carbs_g?: number;
-        fat_g?: number;
-    }>, requestedDate?: string): Promise<{
+    saveMealPlan(userId: string, meals: AiMeal[], requestedDate?: string): Promise<{
         meal_plan_items: ({
             recipe: {
                 is_active: boolean;
                 created_at: Date;
                 updated_at: Date;
-                recipe_id: string;
                 name: string;
                 description: string | null;
                 meal_type: string;
@@ -66,15 +58,18 @@ export declare class AiService {
                 fat_g: import("@prisma/client-runtime-utils").Decimal;
                 estimated_cost: import("@prisma/client-runtime-utils").Decimal;
                 emoji: string | null;
+                cooking_tips: string | null;
+                recipe_id: string;
+                source: import("@prisma/client").$Enums.recipe_source;
             };
         } & {
             created_at: Date;
             updated_at: Date;
-            recipe_id: string;
             meal_type: string;
+            recipe_id: string;
+            sort_order: number;
             servings: import("@prisma/client-runtime-utils").Decimal;
             meal_plan_id: string;
-            sort_order: number;
             meal_plan_item_id: string;
             calories_snapshot: number;
             cost_snapshot: import("@prisma/client-runtime-utils").Decimal;

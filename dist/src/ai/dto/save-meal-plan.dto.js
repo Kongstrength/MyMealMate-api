@@ -9,13 +9,38 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SaveMealPlanDto = exports.SaveMealItemDto = void 0;
+exports.SaveMealPlanDto = exports.SaveMealItemDto = exports.SaveMealIngredientDto = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 const mealTypes = ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'];
+class SaveMealIngredientDto {
+    name;
+    amount;
+    estimated_price;
+}
+exports.SaveMealIngredientDto = SaveMealIngredientDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], SaveMealIngredientDto.prototype, "name", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(80),
+    __metadata("design:type", String)
+], SaveMealIngredientDto.prototype, "amount", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    __metadata("design:type", Number)
+], SaveMealIngredientDto.prototype, "estimated_price", void 0);
 class SaveMealItemDto {
     meal_type;
     menu_name;
+    description;
+    ingredients;
+    steps;
+    cooking_tips;
     estimated_cost;
     calories;
     protein_g;
@@ -32,6 +57,31 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], SaveMealItemDto.prototype, "menu_name", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(500),
+    __metadata("design:type", String)
+], SaveMealItemDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ArrayMinSize)(1),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => SaveMealIngredientDto),
+    __metadata("design:type", Array)
+], SaveMealItemDto.prototype, "ingredients", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ArrayMinSize)(1),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], SaveMealItemDto.prototype, "steps", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(500),
+    __metadata("design:type", String)
+], SaveMealItemDto.prototype, "cooking_tips", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(0),

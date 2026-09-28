@@ -7,11 +7,26 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
 
 const mealTypes = ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'] as const;
+
+export class SaveMealIngredientDto {
+  @IsString()
+  @MaxLength(120)
+  name!: string;
+
+  @IsString()
+  @MaxLength(80)
+  amount!: string;
+
+  @IsNumber()
+  @Min(0)
+  estimated_price!: number;
+}
 
 export class SaveMealItemDto {
   @IsString()
@@ -20,6 +35,27 @@ export class SaveMealItemDto {
 
   @IsString()
   menu_name!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  description?: string;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => SaveMealIngredientDto)
+  ingredients!: SaveMealIngredientDto[];
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  steps!: string[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  cooking_tips?: string;
 
   @IsNumber()
   @Min(0)

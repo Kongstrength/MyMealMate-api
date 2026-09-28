@@ -39,7 +39,6 @@ export declare class MealPlanController {
                 is_active: boolean;
                 created_at: Date;
                 updated_at: Date;
-                recipe_id: string;
                 name: string;
                 description: string | null;
                 meal_type: string;
@@ -49,15 +48,18 @@ export declare class MealPlanController {
                 fat_g: import("@prisma/client-runtime-utils").Decimal;
                 estimated_cost: import("@prisma/client-runtime-utils").Decimal;
                 emoji: string | null;
+                cooking_tips: string | null;
+                recipe_id: string;
+                source: import("@prisma/client").$Enums.recipe_source;
             };
         } & {
             created_at: Date;
             updated_at: Date;
-            recipe_id: string;
             meal_type: string;
+            recipe_id: string;
+            sort_order: number;
             servings: import("@prisma/client-runtime-utils").Decimal;
             meal_plan_id: string;
-            sort_order: number;
             meal_plan_item_id: string;
             calories_snapshot: number;
             cost_snapshot: import("@prisma/client-runtime-utils").Decimal;
@@ -77,7 +79,6 @@ export declare class MealPlanController {
                 is_active: boolean;
                 created_at: Date;
                 updated_at: Date;
-                recipe_id: string;
                 name: string;
                 description: string | null;
                 meal_type: string;
@@ -87,15 +88,18 @@ export declare class MealPlanController {
                 fat_g: import("@prisma/client-runtime-utils").Decimal;
                 estimated_cost: import("@prisma/client-runtime-utils").Decimal;
                 emoji: string | null;
+                cooking_tips: string | null;
+                recipe_id: string;
+                source: import("@prisma/client").$Enums.recipe_source;
             };
         } & {
             created_at: Date;
             updated_at: Date;
-            recipe_id: string;
             meal_type: string;
+            recipe_id: string;
+            sort_order: number;
             servings: import("@prisma/client-runtime-utils").Decimal;
             meal_plan_id: string;
-            sort_order: number;
             meal_plan_item_id: string;
             calories_snapshot: number;
             cost_snapshot: import("@prisma/client-runtime-utils").Decimal;

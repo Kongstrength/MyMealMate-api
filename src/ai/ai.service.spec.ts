@@ -10,6 +10,13 @@ const validMeals = [
     protein_g: 25,
     carbs_g: 60,
     fat_g: 12,
+    description: 'โจ๊กไก่ย่อยง่าย',
+    ingredients: [
+      { name: 'ข้าว', amount: '1 ถ้วย', estimated_price: 10 },
+      { name: 'ไก่', amount: '100 กรัม', estimated_price: 25 },
+    ],
+    steps: ['ต้มข้าวจนเป็นโจ๊ก', 'ใส่ไก่และต้มจนสุก'],
+    cooking_tips: 'ใช้ไฟอ่อน',
   },
   {
     meal_type: 'LUNCH',
@@ -19,6 +26,13 @@ const validMeals = [
     protein_g: 35,
     carbs_g: 80,
     fat_g: 20,
+    description: 'ข้าวกะเพราไก่',
+    ingredients: [
+      { name: 'ไก่', amount: '120 กรัม', estimated_price: 30 },
+      { name: 'ใบกะเพรา', amount: '20 กรัม', estimated_price: 5 },
+    ],
+    steps: ['ผัดไก่จนสุก', 'ใส่ใบกะเพราและปรุงรส'],
+    cooking_tips: 'ใช้ไฟแรงช่วงท้าย',
   },
   {
     meal_type: 'DINNER',
@@ -28,6 +42,13 @@ const validMeals = [
     protein_g: 40,
     carbs_g: 55,
     fat_g: 22,
+    description: 'แกงจืดเต้าหู้ไก่สับ',
+    ingredients: [
+      { name: 'เต้าหู้', amount: '1 หลอด', estimated_price: 15 },
+      { name: 'ไก่สับ', amount: '100 กรัม', estimated_price: 30 },
+    ],
+    steps: ['ต้มน้ำซุป', 'ใส่ไก่สับและเต้าหู้จนสุก'],
+    cooking_tips: 'ช้อนฟองออกเพื่อให้น้ำซุปใส',
   },
 ];
 
@@ -227,5 +248,64 @@ describe('AiService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('stores AI recipe ingredients and steps with the meal plan', async () => {
+    const tx = {
+      recipe: {
+        upsert: jest
+          .fn()
+          .mockResolvedValueOnce({ recipe_id: 'recipe-1' })
+          .mockResolvedValueOnce({ recipe_id: 'recipe-2' })
+          .mockResolvedValueOnce({ recipe_id: 'recipe-3' }),
+      },
+      mealPlan: {
+        upsert: jest.fn().mockResolvedValue({ meal_plan_id: 'plan-1' }),
+        update: jest.fn().mockResolvedValue({ meal_plan_id: 'plan-1' }),
+      },
+      mealPlanItem: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+        createMany: jest.fn().mockResolvedValue({ count: 3 }),
+      },
+    };
+    prisma.$transaction.mockImplementation(
+      (callback: (transaction: typeof tx) => unknown) => callback(tx),
+    );
+
+    await service.saveMealPlan('user-id', validMeals, '2026-09-22');
+
+    expect(tx.recipe.upsert).toHaveBeenCalledTimes(3);
+    expect(tx.recipe.upsert).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        // Jest asymmetric matchers are intentionally typed as `any`.
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        create: expect.objectContaining({
+          source: 'AI',
+          ingredients: {
+            create: [
+              {
+                name: 'ข้าว',
+                amount: '1 ถ้วย',
+                estimated_price: 10,
+                sort_order: 0,
+              },
+              {
+                name: 'ไก่',
+                amount: '100 กรัม',
+                estimated_price: 25,
+                sort_order: 1,
+              },
+            ],
+          },
+          steps: {
+            create: [
+              { instruction: 'ต้มข้าวจนเป็นโจ๊ก', sort_order: 0 },
+              { instruction: 'ใส่ไก่และต้มจนสุก', sort_order: 1 },
+            ],
+          },
+        }),
+      }),
+    );
   });
 });

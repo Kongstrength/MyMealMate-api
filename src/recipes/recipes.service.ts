@@ -12,6 +12,10 @@ export class RecipesService {
         ...(mealType ? { meal_type: mealType.toUpperCase() } : {}),
       },
       orderBy: [{ meal_type: 'asc' }, { name: 'asc' }],
+      include: {
+        ingredients: { orderBy: { sort_order: 'asc' } },
+        steps: { orderBy: { sort_order: 'asc' } },
+      },
     });
 
     return recipes.map((recipe) => ({
@@ -25,6 +29,17 @@ export class RecipesService {
       fat: Number(recipe.fat_g),
       estimatedCost: Number(recipe.estimated_cost),
       emoji: recipe.emoji,
+      source: recipe.source,
+      cookingTips: recipe.cooking_tips,
+      ingredients: recipe.ingredients.map((ingredient) => ({
+        name: ingredient.name,
+        amount: ingredient.amount,
+        estimatedPrice:
+          ingredient.estimated_price === null
+            ? null
+            : Number(ingredient.estimated_price),
+      })),
+      steps: recipe.steps.map((step) => step.instruction),
     }));
   }
 }

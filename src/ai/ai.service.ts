@@ -46,11 +46,12 @@ type AiMeal = {
   meal_type: (typeof MEAL_TYPES)[number];
   menu_name: string;
   description?: string;
-  ingredients?: Array<{
+  ingredients: Array<{
     name: string;
     amount: string;
     estimated_price: number;
   }>;
+  steps: string[];
   estimated_cost: number;
   calories: number;
   protein_g?: number;
@@ -233,7 +234,7 @@ ${priceSection}
 5. แคลอรี่รวมควรใกล้เคียง ${context.caloriesTarget} kcal
 6. ใช้ราคาวัตถุดิบจริงจากข้อมูลด้านบนในการคำนวณ
 7. ระบุส่วนผสมหลักพร้อมปริมาณและราคาโดยประมาณ
-8. ให้เคล็ดลับการทำอาหารสั้นๆ
+8. ระบุขั้นตอนการทำอาหารอย่างน้อย 2 ขั้นตอน และให้เคล็ดลับสั้นๆ
 9. ห้ามใช้วัตถุดิบในรายการอาหารที่แพ้โดยเด็ดขาด และควรหลีกเลี่ยงรายการอาหารที่ไม่ชอบ
 10. หากข้อมูลขัดกัน ให้เรียงความสำคัญ: อาหารที่แพ้ > อาหารที่ไม่ชอบ > อาหารที่ชอบ
 
@@ -249,6 +250,7 @@ ${priceSection}
       "ingredients": [
         { "name": "ชื่อวัตถุดิบ", "amount": "ปริมาณ", "estimated_price": number }
       ],
+      "steps": ["ขั้นตอนที่ 1", "ขั้นตอนที่ 2"],
       "estimated_cost": number,
       "calories": number,
       "protein_g": number,
@@ -398,6 +400,19 @@ ${priceSection}
         mealTypes.has(meal.meal_type) ||
         typeof meal.menu_name !== 'string' ||
         !meal.menu_name.trim() ||
+        !Array.isArray(meal.ingredients) ||
+        meal.ingredients.length === 0 ||
+        meal.ingredients.some(
+          (ingredient) =>
+            typeof ingredient.name !== 'string' ||
+            !ingredient.name.trim() ||
+            typeof ingredient.amount !== 'string' ||
+            !ingredient.amount.trim() ||
+            !this.isNonNegativeNumber(ingredient.estimated_price),
+        ) ||
+        !Array.isArray(meal.steps) ||
+        meal.steps.length === 0 ||
+        meal.steps.some((step) => typeof step !== 'string' || !step.trim()) ||
         !this.isNonNegativeNumber(meal.estimated_cost) ||
         !this.isNonNegativeNumber(meal.calories) ||
         !this.isOptionalNonNegativeNumber(meal.protein_g) ||
@@ -503,19 +518,7 @@ ${priceSection}
     });
   }
 
-  async saveMealPlan(
-    userId: string,
-    meals: Array<{
-      meal_type: string;
-      menu_name: string;
-      estimated_cost: number;
-      calories: number;
-      protein_g?: number;
-      carbs_g?: number;
-      fat_g?: number;
-    }>,
-    requestedDate?: string,
-  ) {
+  async saveMealPlan(userId: string, meals: AiMeal[], requestedDate?: string) {
     this.validateMealsForSave(meals);
 
     const dateValue = requestedDate ?? formatBangkokDateKey();
@@ -531,6 +534,16 @@ ${priceSection}
       // 1) Upsert recipes from AI results
       const recipeIds: string[] = [];
       for (const meal of meals) {
+        const ingredients = meal.ingredients.map((ingredient, index) => ({
+          name: ingredient.name.trim(),
+          amount: ingredient.amount.trim(),
+          estimated_price: ingredient.estimated_price,
+          sort_order: index,
+        }));
+        const steps = meal.steps.map((instruction, index) => ({
+          instruction: instruction.trim(),
+          sort_order: index,
+        }));
         const recipe = await tx.recipe.upsert({
           where: {
             name_meal_type: {
@@ -547,14 +560,28 @@ ${priceSection}
             fat_g: meal.fat_g ?? 0,
             estimated_cost: meal.estimated_cost,
             emoji: this.mealTypeEmoji(meal.meal_type),
-            description: 'สร้างโดย AI',
+            description: meal.description?.trim() || 'สร้างโดย AI',
+            source: 'AI',
+            cooking_tips: meal.cooking_tips?.trim() || null,
+            ingredients: { create: ingredients },
+            steps: { create: steps },
           },
           update: {
+            description: meal.description?.trim() || 'สร้างโดย AI',
             calories: meal.calories,
             protein_g: meal.protein_g ?? 0,
             carbs_g: meal.carbs_g ?? 0,
             fat_g: meal.fat_g ?? 0,
             estimated_cost: meal.estimated_cost,
+            cooking_tips: meal.cooking_tips?.trim() || null,
+            ingredients: {
+              deleteMany: {},
+              create: ingredients,
+            },
+            steps: {
+              deleteMany: {},
+              create: steps,
+            },
           },
         });
         recipeIds.push(recipe.recipe_id);
